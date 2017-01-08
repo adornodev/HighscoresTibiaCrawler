@@ -12,3 +12,13 @@ c:\users\usuario\documents\visual studio 2015\Projects\HighscoresTibia\Highscore
 c:\users\usuario\documents\visual studio 2015\Projects\HighscoresTibia\HighscoresTibia\obj\Debug\HighscoresTibia.pdb
 C:\Users\USUARIO\Documents\Visual Studio 2015\Projects\HighscoresTibia\HighscoresTibia\bin\Debug\Newtonsoft.Json.dll
 C:\Users\USUARIO\Documents\Visual Studio 2015\Projects\HighscoresTibia\HighscoresTibia\bin\Debug\Newtonsoft.Json.xml
+D:\GITHUB PROJECTS\HighscoresTibiaCrawler\HighscoresTibia\HighscoresTibia\bin\Debug\HighscoresTibia.exe.config
+D:\GITHUB PROJECTS\HighscoresTibiaCrawler\HighscoresTibia\HighscoresTibia\obj\Debug\HighscoresTibia.exe
+D:\GITHUB PROJECTS\HighscoresTibiaCrawler\HighscoresTibia\HighscoresTibia\obj\Debug\HighscoresTibia.pdb
+D:\GITHUB PROJECTS\HighscoresTibiaCrawler\HighscoresTibia\HighscoresTibia\bin\Debug\HighscoresTibia.exe
+D:\GITHUB PROJECTS\HighscoresTibiaCrawler\HighscoresTibia\HighscoresTibia\bin\Debug\HighscoresTibia.pdb
+D:\GITHUB PROJECTS\HighscoresTibiaCrawler\HighscoresTibia\HighscoresTibia\bin\Debug\Newtonsoft.Json.dll
+D:\GITHUB PROJECTS\HighscoresTibiaCrawler\HighscoresTibia\HighscoresTibia\obj\Debug\HighscoresTibia.csprojResolveAssemblyReference.cache
+D:\GITHUB PROJECTS\HighscoresTibiaCrawler\HighscoresTibia\HighscoresTibia\bin\Debug\HtmlAgilityPack.dll
+D:\GITHUB PROJECTS\HighscoresTibiaCrawler\HighscoresTibia\HighscoresTibia\bin\Debug\Ude.dll
+D:\GITHUB PROJECTS\HighscoresTibiaCrawler\HighscoresTibia\HighscoresTibia\bin\Debug\WebUtilsLib.dll

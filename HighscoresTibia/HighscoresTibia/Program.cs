@@ -59,12 +59,23 @@ namespace HighscoresTibia
         static void Main(string[] args)
         {
 
-            HtmlDocument htmlDoc     = new HtmlDocument();
-            StringBuilder parameters = new StringBuilder();
+            HtmlDocument  htmlDoc         = new HtmlDocument();
+            StringBuilder parameters      = new StringBuilder();
+            List<Player> listPlayerFilter = new List<Player>();
 
-            string html              = null;
-            string mainURL           = null;
-            int pageNumber           = 1;
+            // Used to build the string JSON.
+            StringBuilder sbJSON          = new StringBuilder();
+
+            string        html            = null;
+            string        mainURL         = null;
+            string[]      vocations;
+            int           pageNumber      = 1;
+            int           count;
+            int           retries         = 0;
+
+            
+            // Create new stopwatch.
+            Stopwatch     watch = new Stopwatch();
 
             List<String> worlds = new List<string>
             {
@@ -85,39 +96,42 @@ namespace HighscoresTibia
             // Setup HTTP headers
             SetupHeaders(_request);
 
-            int count;
-            StringBuilder sb = new StringBuilder();
-
-            // Create new stopwatch.
-            Stopwatch watch = new Stopwatch();
-
             // Begin timing.
             watch.Start();
 
             Console.WriteLine(">>>>> HIGHSCORE TIBIA CRAWLER <<<<<\n\n");
-            sb.Clear();
-            sb.Append("{\"Players\":[");
+            sbJSON.Clear();
+            sbJSON.Append("{\"Players\":[");
 
-
+            #region CRAWLER
             foreach (string world in worlds)
             {
-                count = 1;
-
+                count   = 1;
+                retries = 0;
                 Console.WriteLine("World > " + world + " < Processing...");
 
                 mainURL = "https://secure.tibia.com/community/?subtopic=highscores&world=" + world + "&list=experience&profession=0&currentpage=" + count;
 
-                Again2:
-                html = _request.Get(mainURL);
-                if (String.IsNullOrEmpty(html))
-                {
-                    System.Threading.Thread.Sleep(2000);
-                    goto Again2;
-                }
+                html    = String.Empty;
+                retries = 0;
 
+                while (String.IsNullOrEmpty(html))
+                {
+                    html = _request.Get(mainURL);
+                    System.Threading.Thread.Sleep(1500);
+
+                    if (++retries > 5)
+                    {
+                        ConsoleError("ERROR TO GET INFORMATION THROUGH THE REQUEST OF THE MAINURL. REPORT TO THE ADMINISTRATOR ");
+                        Console.ReadKey();
+                        return;
+                    }
+                } 
                 htmlDoc.LoadHtml(html);
 
-                // Get the number of pages
+                //Extract all Worlds
+                //HtmlNo
+                // Extract the number of pages
                 HtmlNodeCollection nodes = htmlDoc.DocumentNode.SelectNodes("//small/div//a");
 
                 if ((nodes == null) || (nodes.Count == 0))
@@ -133,13 +147,22 @@ namespace HighscoresTibia
                 {
                     mainURL = "https://secure.tibia.com/community/?subtopic=highscores&world=" + world + "&list=experience&profession=0&currentpage=" + count;
 
-                    Again:
-                    html = _request.Get(mainURL);
-                    if (String.IsNullOrEmpty(html))
+                    html    = String.Empty;
+                    retries = 0;
+
+                    while (String.IsNullOrEmpty(html))
                     {
-                        System.Threading.Thread.Sleep(2000);
-                        goto Again;
+                        html = _request.Get(mainURL);
+                        System.Threading.Thread.Sleep(1500);
+
+                        if (++retries > 5)
+                        {
+                            ConsoleError("ERROR TO GET INFORMATION THROUGH THE REQUEST OF THE MAINURL. REPORT TO THE ADMINISTRATOR ");
+                            Console.ReadKey();
+                            return;
+                        }
                     }
+                    
 
                     htmlDoc.LoadHtml(html);
 
@@ -155,38 +178,73 @@ namespace HighscoresTibia
                     foreach (HtmlNode node in nodes)
                     {
                         dic = ProcessNewPlayer(node, world);
-                        sb.Append("{");
+
+                        if (dic == null)
+                            return;
+
+                        sbJSON.Append("{");
 
                         foreach (string data in dic.Keys)
                         {
-                            sb.AppendFormat("\"{0}\":\"{1}\",", data, dic[data]);
+                            sbJSON.AppendFormat("\"{0}\":\"{1}\",", data, dic[data]);
                         }
 
                         //Remove last caracter
-                        sb.Length--;
-                        sb.Append("},");
+                        sbJSON.Length--;
+                        sbJSON.Append("},");
                     }
 
                 } while (++count <= pageNumber);
 
                 Console.WriteLine("World > " + world + " < Processed!\n");
             }
+            #endregion
+
             watch.Stop();
 
             // Formatting JSON
-            sb.Length--;
-            sb.Append("]}");
+            sbJSON.Length--;
+            sbJSON.Append("]}");
 
             Console.WriteLine(">> Capture processing time: " + watch.Elapsed.ToString(@"m\:ss"));
            
-            AllPlayers listPlayers = JsonConvert.DeserializeObject<AllPlayers>(sb.ToString());
+            AllPlayers listPlayers = JsonConvert.DeserializeObject<AllPlayers>(sbJSON.ToString());
 
-            
+            //Extract only vocations of interest
+
+            foreach (Player p in listPlayers.Players)
+            {
+                if (_vocationPlayers.Split(',').Length == 1)
+                {
+                    if (p.vocation.IndexOf(_vocationPlayers, StringComparison.OrdinalIgnoreCase) > -1)
+                        listPlayerFilter.Add(p);
+                }
+
+                else
+                {
+                    vocations = _vocationPlayers.Split(new string[] { "," },StringSplitOptions.RemoveEmptyEntries);
+ 
+                    if (vocations.Length < 1)
+                    {
+                        ConsoleError("ERROR TO GET VOCATIONS (APPCONFIG). REPORT TO THE ADMINISTRATOR");
+                        Console.ReadKey();
+                        return;
+                    }
+
+                    foreach(string v in vocations)
+                    {
+                        if (p.vocation.IndexOf(v, StringComparison.OrdinalIgnoreCase) > -1)
+                            listPlayerFilter.Add(p);
+                    }
+                }
+            } 
+
+            #region SAVE INFORMATION TO TEXT FILE
             if (_shouldSaveAllPlayers)
             {
                 Console.WriteLine("\nSaving results ....");
 
-                if (SaveResultToTXT(sb.ToString(), _outputfileAllPlayers))
+                if (SaveResultToTXT(sbJSON.ToString(), _outputfileAllPlayers))
                     Console.WriteLine("Results saved!");
                 else
                 {
@@ -194,34 +252,34 @@ namespace HighscoresTibia
                     Console.ReadKey();
                     return;
                 }
-            }
-
+            }         
             else
             {
                 watch = new Stopwatch();
                 watch.Start();
 
                 // Order by Experience
-                List<Player> orderListPlayer = listPlayers.Players.OrderByDescending(o => Convert.ToInt64(o.experience)).ToList();
-                watch.Stop();
+                List<Player> orderListPlayer = listPlayerFilter.OrderByDescending(o => Convert.ToInt64(o.experience)).ToList();
 
+                watch.Stop();
                 Console.WriteLine(">> Ordination processing time: " + watch.Elapsed.ToString(@"m\:ss"));
-                sb.Clear();
+
+                sbJSON.Clear();
 
                 for (int i = 0; i < _numberPlayersTopExpExport; i++)
                 {
-                    sb.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}",
+                    sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}",
                                      i+1,
                                      orderListPlayer[i].name, 
                                      orderListPlayer[i].world, 
                                      orderListPlayer[i].vocation,
                                      orderListPlayer[i].level,
                                      orderListPlayer[i].experience);
-                    sb.AppendLine();
+                    sbJSON.AppendLine();
                 }
                 Console.WriteLine("\nSaving results ....");
 
-                if (SaveResultToTXT(sb.ToString(), _outputfileWithFilter))
+                if (SaveResultToTXT(sbJSON.ToString(), _outputfileWithFilter))
                     Console.WriteLine("Results saved!");
                 else
                 {
@@ -230,8 +288,7 @@ namespace HighscoresTibia
                     return;
                 }
             }
-
-
+            #endregion
 
             Console.ReadKey();
         }
@@ -252,7 +309,11 @@ namespace HighscoresTibia
             nodes = node.SelectNodes(".//td");
 
             if (nodes == null)
+            {
+                ConsoleError("ERROR TO EXTRACT LINES OF TABLE. REPORT TO THE ADMINISTRATOR");
+                Console.ReadKey();
                 return null;
+            }
 
             if (nodes.Count == 5)
             {

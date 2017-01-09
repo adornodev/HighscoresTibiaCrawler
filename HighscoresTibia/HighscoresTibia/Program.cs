@@ -59,9 +59,10 @@ namespace HighscoresTibia
         static void Main(string[] args)
         {
 
-            HtmlDocument  htmlDoc         = new HtmlDocument();
-            StringBuilder parameters      = new StringBuilder();
-            List<Player> listPlayerFilter = new List<Player>();
+            HtmlDocument       htmlDoc         = new HtmlDocument();
+            StringBuilder      parameters      = new StringBuilder();
+            HtmlNodeCollection nodes;
+            List<Player>       listPlayerFilter= new List<Player>();
 
             // Used to build the string JSON.
             StringBuilder sbJSON          = new StringBuilder();
@@ -72,15 +73,11 @@ namespace HighscoresTibia
             int           pageNumber      = 1;
             int           count;
             int           retries         = 0;
-
             
             // Create new stopwatch.
             Stopwatch     watch = new Stopwatch();
 
-            List<String> worlds = new List<string>
-            {
-                "Amera", "Antica", "Astera", "Aurera", "Aurora", "Bellona", "Belobra", "Beneva","Calmera", "Calva", "Calvera", "Candia", "Celesta", "Chrona", "Danera", "Dolera", "Efidia", "Eldera", "Ferobra", "Fidera", "Fortera", "Garnera", "Guardia", "Harmonia", "Honera", "Hydera", "Inferna", "Iona", "Irmada", "Julera", "Justera", "Kenora", "Kronera", "Laudera", "Luminera", "Magera", "Menera", "Morta", "Mortera", "Neptera", "Nerana", "Nika", "Olympa", "Osera", "Pacera", "Premia", "Pythera", "Quilia", "Refugia", "Rowana", "Secura", "Serdebra", "Shivera", "Silvera", "Solera", "Tavara", "Thera", "Umera", "Unitera", "Veludera", "Verlana", "Xantera", "Xylana", "Yanara", "Zanera", "Zeluna"
-            };
+            List<String> worlds = new List<string>();
 
             Dictionary<string, string> dic = new Dictionary<string, string>();
 
@@ -103,7 +100,47 @@ namespace HighscoresTibia
             sbJSON.Clear();
             sbJSON.Append("{\"Players\":[");
 
+
+
+
             #region CRAWLER
+
+            mainURL = "https://secure.tibia.com/community/?subtopic=highscores&world=Antica&list=experience&profession=0&currentpage=1";
+
+            html = String.Empty;
+            retries = 0;
+
+            while (String.IsNullOrEmpty(html))
+            {
+                html = _request.Get(mainURL);
+                System.Threading.Thread.Sleep(500);
+
+                if (++retries > 5)
+                {
+                    ConsoleError("ERROR TO GET INFORMATION THROUGH THE REQUEST OF THE MAINURL. REPORT TO THE ADMINISTRATOR ");
+                    Console.ReadKey();
+                    return;
+                }
+            }
+
+            htmlDoc.LoadHtml(html);
+
+            //Extract all Worlds
+            nodes = htmlDoc.DocumentNode.SelectNodes("//table[@style='width:100%;']/tr[1]//option");
+
+            if ((nodes == null) || nodes.Count == 0)
+            {
+                ConsoleError("ERROR TO GET NODE \"ALL WORLDS\". REPORT TO THE ADMINISTRATOR ");
+                Console.ReadKey();
+                return;
+            }
+
+            foreach (HtmlNode htmlNode in nodes)
+            {
+                if (htmlNode.Attributes["value"] != null)
+                    worlds.Add(htmlNode.Attributes["value"].Value);
+            }
+
             foreach (string world in worlds)
             {
                 count   = 1;
@@ -118,7 +155,7 @@ namespace HighscoresTibia
                 while (String.IsNullOrEmpty(html))
                 {
                     html = _request.Get(mainURL);
-                    System.Threading.Thread.Sleep(1500);
+                    System.Threading.Thread.Sleep(500);
 
                     if (++retries > 5)
                     {
@@ -128,11 +165,9 @@ namespace HighscoresTibia
                     }
                 } 
                 htmlDoc.LoadHtml(html);
-
-                //Extract all Worlds
-                //HtmlNo
+                
                 // Extract the number of pages
-                HtmlNodeCollection nodes = htmlDoc.DocumentNode.SelectNodes("//small/div//a");
+                nodes = htmlDoc.DocumentNode.SelectNodes("//small/div//a");
 
                 if ((nodes == null) || (nodes.Count == 0))
                 {
@@ -153,7 +188,7 @@ namespace HighscoresTibia
                     while (String.IsNullOrEmpty(html))
                     {
                         html = _request.Get(mainURL);
-                        System.Threading.Thread.Sleep(1500);
+                        System.Threading.Thread.Sleep(500);
 
                         if (++retries > 5)
                         {
@@ -255,14 +290,9 @@ namespace HighscoresTibia
             }         
             else
             {
-                watch = new Stopwatch();
-                watch.Start();
 
                 // Order by Experience
                 List<Player> orderListPlayer = listPlayerFilter.OrderByDescending(o => Convert.ToInt64(o.experience)).ToList();
-
-                watch.Stop();
-                Console.WriteLine(">> Ordination processing time: " + watch.Elapsed.ToString(@"m\:ss"));
 
                 sbJSON.Clear();
 
@@ -331,11 +361,6 @@ namespace HighscoresTibia
             }
 
             return null;
-        }
-
-        private static string ConvertFromDictionaryToJSON(Dictionary<string, string> dictionary)
-        {
-            return JsonConvert.SerializeObject(dictionary);
         }
 
         private static bool SaveResultToTXT(string text, string path)

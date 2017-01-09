@@ -15,9 +15,7 @@ namespace HighscoresTibia
     class Program
     {
         #region ** Private Attributes **
-        private static string      _outputfileAllPlayers;
-        private static string      _outputfileWithFilter;
-        private static bool        _shouldSaveAllPlayers;
+        private static string      _outputfile;
         private static int         _numberPlayersTopExpExport;
         private static string      _vocationPlayers;
         private static WebRequests _request = null;
@@ -66,13 +64,15 @@ namespace HighscoresTibia
 
             // Used to build the string JSON.
             StringBuilder sbJSON          = new StringBuilder();
-
+            
             string        html            = null;
             string        mainURL         = null;
-            string[]      vocations;
             int           pageNumber      = 1;
-            int           count;
             int           retries         = 0;
+            bool          successSaved    = false;
+            bool          needsFilter     = true;
+            string[]      vocations;
+            int           count;
             
             // Create new stopwatch.
             Stopwatch     watch = new Stopwatch();
@@ -82,11 +82,9 @@ namespace HighscoresTibia
             Dictionary<string, string> dic = new Dictionary<string, string>();
 
             #region Getting AppSettings fields
-            _outputfileAllPlayers      = LoadConfigurationSetting("outputfileAllPlayers", Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "HIGHSCORES.txt"));
-            _outputfileWithFilter      = LoadConfigurationSetting("outputfileWithFilter", Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "HIGHSCORES_TOP500.txt"));
+            _outputfile                = LoadConfigurationSetting("outputfile", Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "HIGHSCORES_FILTER.txt"));
             _numberPlayersTopExpExport = Convert.ToInt32(ConfigurationManager.AppSettings.Get("numberPlayersTopExpExport"));
-            _shouldSaveAllPlayers      = (Convert.ToInt32(ConfigurationManager.AppSettings.Get("shouldSaveAllPlayers"))) == 1 ? true : false;
-            _vocationPlayers           = LoadConfigurationSetting("vocationPlayers","Knight");
+            _vocationPlayers           = LoadConfigurationSetting("vocationPlayers","All");
             Configure();
             #endregion
 
@@ -141,6 +139,12 @@ namespace HighscoresTibia
                     worlds.Add(htmlNode.Attributes["value"].Value);
             }
 
+#if DEBUG
+            worlds.Clear();
+            worlds.Add("Antica");
+            worlds.Add("Amera");
+            worlds.Add("Menera");
+#endif
             foreach (string world in worlds)
             {
                 count   = 1;
@@ -157,7 +161,7 @@ namespace HighscoresTibia
                     html = _request.Get(mainURL);
                     System.Threading.Thread.Sleep(500);
 
-                    if (++retries > 5)
+                    if (++retries > 10)
                     {
                         ConsoleError("ERROR TO GET INFORMATION THROUGH THE REQUEST OF THE MAINURL. REPORT TO THE ADMINISTRATOR ");
                         Console.ReadKey();
@@ -190,7 +194,7 @@ namespace HighscoresTibia
                         html = _request.Get(mainURL);
                         System.Threading.Thread.Sleep(500);
 
-                        if (++retries > 5)
+                        if (++retries > 10)
                         {
                             ConsoleError("ERROR TO GET INFORMATION THROUGH THE REQUEST OF THE MAINURL. REPORT TO THE ADMINISTRATOR ");
                             Console.ReadKey();
@@ -245,20 +249,32 @@ namespace HighscoresTibia
            
             AllPlayers listPlayers = JsonConvert.DeserializeObject<AllPlayers>(sbJSON.ToString());
 
+
             //Extract only vocations of interest
-
-            foreach (Player p in listPlayers.Players)
+            if (_vocationPlayers.Split(',').Length == 1)
             {
-                if (_vocationPlayers.Split(',').Length == 1)
-                {
-                    if (p.vocation.IndexOf(_vocationPlayers, StringComparison.OrdinalIgnoreCase) > -1)
-                        listPlayerFilter.Add(p);
-                }
-
+                if (_vocationPlayers.IndexOf("All", StringComparison.OrdinalIgnoreCase) > -1)
+                    needsFilter = false;
                 else
+                    needsFilter = true;
+
+                foreach (Player p in listPlayers.Players)
                 {
-                    vocations = _vocationPlayers.Split(new string[] { "," },StringSplitOptions.RemoveEmptyEntries);
- 
+                    if (!needsFilter)
+                        listPlayerFilter.Add(p);
+                    else
+                    {
+                        if (p.vocation.IndexOf(_vocationPlayers, StringComparison.OrdinalIgnoreCase) > -1)
+                            listPlayerFilter.Add(p);
+                    }
+                }
+            }
+            else
+            {
+                foreach (Player p in listPlayers.Players)
+                {
+                    vocations = _vocationPlayers.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+
                     if (vocations.Length < 1)
                     {
                         ConsoleError("ERROR TO GET VOCATIONS (APPCONFIG). REPORT TO THE ADMINISTRATOR");
@@ -266,58 +282,84 @@ namespace HighscoresTibia
                         return;
                     }
 
-                    foreach(string v in vocations)
+                    foreach (string v in vocations)
                     {
                         if (p.vocation.IndexOf(v, StringComparison.OrdinalIgnoreCase) > -1)
                             listPlayerFilter.Add(p);
                     }
                 }
-            } 
+            }
+ 
+            #region SAVE INFORMATION TO TEXT FILE   
 
-            #region SAVE INFORMATION TO TEXT FILE
-            if (_shouldSaveAllPlayers)
+            // Order by Experience
+            List<Player> orderListPlayer = listPlayerFilter.OrderByDescending(o => Convert.ToInt64(o.experience)).ToList();
+
+                
+            StringBuilder sbJSONKnight   = new StringBuilder();
+            StringBuilder sbJSONDruid    = new StringBuilder();
+            StringBuilder sbJSONPaladin  = new StringBuilder();
+            StringBuilder sbJSONSorcerer = new StringBuilder();
+            StringBuilder sbJSONALL      = new StringBuilder();
+
+            if (_numberPlayersTopExpExport > orderListPlayer.Count)
             {
-                Console.WriteLine("\nSaving results ....");
+                ConsoleError("THE NUMBER OF PLAYERS CHOSEN IN APPCONFIG FILE IS GREATER THAN ALLOWED. REPORT TO THE ADMINISTRATOR");
+                Console.ReadKey();
+                return;
+            }
 
-                if (SaveResultToTXT(sbJSON.ToString(), _outputfileAllPlayers))
-                    Console.WriteLine("Results saved!");
-                else
+            for (int i = 0; i < _numberPlayersTopExpExport; i++)
+            {
+                sbJSON.Clear();
+                sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}",
+                                    i+1,
+                                    orderListPlayer[i].name, 
+                                    orderListPlayer[i].world, 
+                                    orderListPlayer[i].vocation,
+                                    orderListPlayer[i].level,
+                                    orderListPlayer[i].experience);
+                sbJSON.AppendLine();
+
+                if (orderListPlayer[i].vocation.IndexOf("Knight", StringComparison.OrdinalIgnoreCase) > -1)
                 {
-                    ConsoleError("ERROR TO SAVE FILE. REPORT TO THE ADMINISTRATOR");
-                    Console.ReadKey();
-                    return;
+                    sbJSONKnight.Append(sbJSON.ToString());
                 }
-            }         
+                else if (orderListPlayer[i].vocation.IndexOf("Druid", StringComparison.OrdinalIgnoreCase) > -1)
+                {
+                    sbJSONDruid.Append(sbJSON.ToString());
+                }
+                else if (orderListPlayer[i].vocation.IndexOf("Paladin", StringComparison.OrdinalIgnoreCase) > -1)
+                {
+                    sbJSONPaladin.Append(sbJSON.ToString());
+                }
+                else if (orderListPlayer[i].vocation.IndexOf("Sorcerer", StringComparison.OrdinalIgnoreCase) > -1)
+                {
+                    sbJSONSorcerer.Append(sbJSON.ToString());
+                }
+                if (!needsFilter)
+                    sbJSONALL.Append(sbJSON.ToString());
+
+            }
+
+
+            Console.WriteLine("\nSaving results ....");
+
+            successSaved = SaveResultToTXT(sbJSONKnight.ToString(),   _outputfile,  "KNIGHT");
+            successSaved = SaveResultToTXT(sbJSONDruid.ToString(),    _outputfile,  "DRUID");
+            successSaved = SaveResultToTXT(sbJSONPaladin.ToString(),  _outputfile,  "PALADIN");
+            successSaved = SaveResultToTXT(sbJSONSorcerer.ToString(), _outputfile,  "SORCERER");
+            successSaved = SaveResultToTXT(sbJSONALL.ToString(),      _outputfile,  "ALL");
+
+            if (successSaved)
+                Console.WriteLine("Results saved!");
             else
             {
-
-                // Order by Experience
-                List<Player> orderListPlayer = listPlayerFilter.OrderByDescending(o => Convert.ToInt64(o.experience)).ToList();
-
-                sbJSON.Clear();
-
-                for (int i = 0; i < _numberPlayersTopExpExport; i++)
-                {
-                    sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}",
-                                     i+1,
-                                     orderListPlayer[i].name, 
-                                     orderListPlayer[i].world, 
-                                     orderListPlayer[i].vocation,
-                                     orderListPlayer[i].level,
-                                     orderListPlayer[i].experience);
-                    sbJSON.AppendLine();
-                }
-                Console.WriteLine("\nSaving results ....");
-
-                if (SaveResultToTXT(sbJSON.ToString(), _outputfileWithFilter))
-                    Console.WriteLine("Results saved!");
-                else
-                {
-                    ConsoleError("ERROR TO SAVE FILE WITH FILTER. REPORT TO THE ADMINISTRATOR");
-                    Console.ReadKey();
-                    return;
-                }
+                ConsoleError("ERROR TO SAVE FILE WITH FILTER. REPORT TO THE ADMINISTRATOR");
+                Console.ReadKey();
+                return;
             }
+            
             #endregion
 
             Console.ReadKey();
@@ -363,12 +405,20 @@ namespace HighscoresTibia
             return null;
         }
 
-        private static bool SaveResultToTXT(string text, string path)
+        private static bool SaveResultToTXT(string text, string path,string vocation = "")
         {
             try
             {
-                System.IO.File.WriteAllText(path.Substring(0, path.Length - 4) + "_" + DateTime.Now.ToString("dd/MM/yyyy").Replace("/", "-") + ".txt", text);
+                if (!String.IsNullOrEmpty(vocation))
+                {
+                    if (!String.IsNullOrEmpty(text))
+                    System.IO.File.WriteAllText(path.Substring(0, path.Length - 4) + "_" + DateTime.Now.ToString("dd/MM/yyyy").Replace("/", "-") + "_" + vocation + ".txt", text);
+                }
+                else
+                    System.IO.File.WriteAllText(path.Substring(0, path.Length - 4) + "_" + DateTime.Now.ToString("dd/MM/yyyy").Replace("/", "-") + ".txt", text);
+
                 return true;
+
             }
             catch (Exception ex)
             {

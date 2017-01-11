@@ -80,23 +80,23 @@ namespace HighscoresTibia
             Console.Write("Enter here the number of players to be exported in the output file: ");
             _numberPlayersTopExpExport = Convert.ToInt32(Console.ReadLine());
 
-            Console.WriteLine("\n\n-- About vocations to Exported --");
-            Console.WriteLine("\nIf you need to choose more than one, use \",\" to separate the fields."); 
-            Console.WriteLine("Example: Knight,Sorcerer,Paladin.");
-            Console.WriteLine("\nYou can use the word \"ALL\" to generate information independent of vocation, but should'nt be accompanied by other vocations.\n");
-            Console.Write("\nEnter here vocations to be Exported: ");
-            _vocationPlayers = Console.ReadLine();
+            //Console.WriteLine("\n\n-- About vocations to Exported --");
+            //Console.WriteLine("\nIf you need to choose more than one, use \",\" to separate the fields."); 
+            //Console.WriteLine("Example: Knight,Sorcerer,Paladin.");
+            //Console.WriteLine("\nYou can use the word \"ALL\" to generate information independent of vocation, but should'nt be accompanied by other vocations.\n");
+            //Console.Write("\nEnter here vocations to be Exported: ");
+            //_vocationPlayers = Console.ReadLine();
+            _vocationPlayers = "all";
+            //_vocationPlayers = _vocationPlayers.Replace(" ", "");
 
-            _vocationPlayers = _vocationPlayers.Replace(" ", "");
-
-            if(_vocationPlayers.IndexOf("all",StringComparison.OrdinalIgnoreCase) > -1)
-            {
-                if (_vocationPlayers.Split(',').Length > 1)
-                {
-                    ConsoleError("You can't input \"all\" with other vocation! Pay Attention.");
-                    return;
-                }
-            }
+            //if(_vocationPlayers.IndexOf("all",StringComparison.OrdinalIgnoreCase) > -1)
+            //{
+            //    if (_vocationPlayers.Split(',').Length > 1)
+            //    {
+            //        ConsoleError("You can't input \"all\" with other vocation! Pay Attention.");
+            //        return;
+            //    }
+            //}
             #endregion
 
             _outputfile = Path.Combine(_path, "CRAWLER_RESULTS");

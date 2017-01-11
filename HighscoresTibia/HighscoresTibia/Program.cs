@@ -81,12 +81,22 @@ namespace HighscoresTibia
             _numberPlayersTopExpExport = Convert.ToInt32(Console.ReadLine());
 
             Console.WriteLine("\n\n-- About vocations to Exported --");
-            Console.WriteLine("\nIf you need to choose more than one, use \",\" to separate the fields. Example: Knight,Sorcerer,Paladin.");
-            Console.WriteLine("You can use the word \"ALL\" to generate information independent of vocation, but should'nt be accompanied by other vocations.\n");
+            Console.WriteLine("\nIf you need to choose more than one, use \",\" to separate the fields."); 
+            Console.WriteLine("Example: Knight,Sorcerer,Paladin.");
+            Console.WriteLine("\nYou can use the word \"ALL\" to generate information independent of vocation, but should'nt be accompanied by other vocations.\n");
             Console.Write("\nEnter here vocations to be Exported: ");
             _vocationPlayers = Console.ReadLine();
 
             _vocationPlayers = _vocationPlayers.Replace(" ", "");
+
+            if(_vocationPlayers.IndexOf("all",StringComparison.OrdinalIgnoreCase) > -1)
+            {
+                if (_vocationPlayers.Split(',').Length > 1)
+                {
+                    ConsoleError("You can't input \"all\" with other vocation! Pay Attention.");
+                    return;
+                }
+            }
             #endregion
 
             _outputfile = Path.Combine(_path, "CRAWLER_RESULTS");
@@ -101,10 +111,7 @@ namespace HighscoresTibia
             Console.Clear();
             Console.WriteLine(">>>>> HIGHSCORE TIBIA CRAWLER <<<<<\n\n");
             sbJSON.Clear();
-            sbJSON.Append("{\"Players\":[");
-
-
-
+            sbJSON.Append("{\"Players\":["); 
 
             #region CRAWLER
 
@@ -121,7 +128,6 @@ namespace HighscoresTibia
                 if (++retries > 5)
                 {
                     ConsoleError("ERROR TO GET INFORMATION THROUGH THE REQUEST OF THE MAINURL. REPORT TO THE ADMINISTRATOR ");
-                    Console.ReadKey();
                     return;
                 }
             }
@@ -134,7 +140,6 @@ namespace HighscoresTibia
             if ((nodes == null) || nodes.Count == 0)
             {
                 ConsoleError("ERROR TO GET NODE \"ALL WORLDS\". REPORT TO THE ADMINISTRATOR ");
-                Console.ReadKey();
                 return;
             }
 
@@ -169,7 +174,6 @@ namespace HighscoresTibia
                     if (++retries > 10)
                     {
                         ConsoleError("ERROR TO GET INFORMATION THROUGH THE REQUEST OF THE MAINURL. REPORT TO THE ADMINISTRATOR ");
-                        Console.ReadKey();
                         return;
                     }
                 }
@@ -181,7 +185,6 @@ namespace HighscoresTibia
                 if ((nodes == null) || (nodes.Count == 0))
                 {
                     ConsoleError("ERROR TO CAPTURE NUMBER OF PAGES. REPORT TO THE ADMINISTRATOR");
-                    Console.ReadKey();
                     return;
                 }
 
@@ -202,7 +205,6 @@ namespace HighscoresTibia
                         if (++retries > 10)
                         {
                             ConsoleError("ERROR TO GET INFORMATION THROUGH THE REQUEST OF THE MAINURL. REPORT TO THE ADMINISTRATOR ");
-                            Console.ReadKey();
                             return;
                         }
                     }
@@ -215,7 +217,6 @@ namespace HighscoresTibia
                     if ((nodes == null) || (nodes.Count == 0))
                     {
                         ConsoleError("ERROR TO CAPTURE TABLE. REPORT TO THE ADMINISTRATOR");
-                        Console.ReadKey();
                         return;
                     }
 
@@ -266,7 +267,6 @@ namespace HighscoresTibia
                 if (vocations.Length < 1)
                 {
                     ConsoleError("ERROR TO GET VOCATIONS (APPCONFIG). REPORT TO THE ADMINISTRATOR");
-                    Console.ReadKey();
                     return;
                 }
 
@@ -296,7 +296,6 @@ namespace HighscoresTibia
             if (_numberPlayersTopExpExport > orderListPlayer.Count)
             {
                 ConsoleError("THE NUMBER OF PLAYERS CHOSEN IN APPCONFIG FILE IS GREATER THAN ALLOWED. REPORT TO THE ADMINISTRATOR");
-                Console.ReadKey();
                 return;
             }
 
@@ -312,8 +311,9 @@ namespace HighscoresTibia
                 sbJSON.Clear();
                 if (orderListPlayer[i].vocation.IndexOf("Knight", StringComparison.OrdinalIgnoreCase) > -1 && indexKnight<_numberPlayersTopExpExport)
                 {
-                    sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}",
+                    sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}",
                                     indexKnight + 1,
+                                    indexAll + 1   ,
                                     orderListPlayer[i].name,
                                     orderListPlayer[i].world,
                                     orderListPlayer[i].vocation,
@@ -325,8 +325,9 @@ namespace HighscoresTibia
                 }
                 else if (orderListPlayer[i].vocation.IndexOf("Druid", StringComparison.OrdinalIgnoreCase) > -1 && indexDruid < _numberPlayersTopExpExport)
                 {
-                    sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}",
+                    sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}",
                                     indexDruid + 1,
+                                    indexAll   + 1,
                                     orderListPlayer[i].name,
                                     orderListPlayer[i].world,
                                     orderListPlayer[i].vocation,
@@ -338,8 +339,9 @@ namespace HighscoresTibia
                 }
                 else if (orderListPlayer[i].vocation.IndexOf("Paladin", StringComparison.OrdinalIgnoreCase) > -1 && indexPaladin < _numberPlayersTopExpExport)
                 {
-                    sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}",
+                    sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}",
                                     indexPaladin + 1,
+                                    indexAll     + 1,
                                     orderListPlayer[i].name,
                                     orderListPlayer[i].world,
                                     orderListPlayer[i].vocation,
@@ -351,8 +353,9 @@ namespace HighscoresTibia
                 }
                 else if (orderListPlayer[i].vocation.IndexOf("Sorcerer", StringComparison.OrdinalIgnoreCase) > -1 && indexSorcerer < _numberPlayersTopExpExport)
                 {
-                    sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}",
+                    sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}",
                                     indexSorcerer + 1,
+                                    indexAll      + 1,
                                     orderListPlayer[i].name,
                                     orderListPlayer[i].world,
                                     orderListPlayer[i].vocation,
@@ -362,9 +365,10 @@ namespace HighscoresTibia
                     sbJSONSorcerer.Append(sbJSON.ToString());
                     indexSorcerer++;
                 }
-                sbJSON.Clear();
+                
                 if (!needsFilter && i < _numberPlayersTopExpExport) 
                 {
+                    sbJSON.Clear();
                     sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}",
                                     indexAll + 1,
                                     orderListPlayer[i].name,
@@ -373,9 +377,9 @@ namespace HighscoresTibia
                                     orderListPlayer[i].level,
                                     orderListPlayer[i].experience);
                     sbJSON.AppendLine();
-                    sbJSONALL.Append(sbJSON.ToString());
-                    indexAll++;
+                    sbJSONALL.Append(sbJSON.ToString());                    
                 }
+                indexAll++;
             }
 
 
@@ -392,12 +396,11 @@ namespace HighscoresTibia
             else
             {
                 ConsoleError("ERROR TO SAVE FILE WITH FILTER. REPORT TO THE ADMINISTRATOR");
-                Console.ReadKey();
                 return;
             }
-
             #endregion
 
+            Console.WriteLine("\n>>Files saved in \" " + _outputfile.Substring(0,_outputfile.LastIndexOf("\\")) +"\"");
             Console.ReadKey();
         }
 
@@ -469,6 +472,7 @@ namespace HighscoresTibia
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(text);
             Console.ResetColor();
+            Console.ReadKey();
         }
     }
 }

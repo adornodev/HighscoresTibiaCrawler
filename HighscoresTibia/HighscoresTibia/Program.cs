@@ -14,11 +14,11 @@ using WebUtilsLib;
 namespace HighscoresTibia
 {
     class Program
-    {       
+    {
         #region ** Private Attributes **
-        private static string      _outputfile;
-        private static int         _numberPlayersTopExpExport;
-        private static string      _vocationPlayers;
+        private static string _outputfile;
+        private static int _numberPlayersTopExpExport;
+        private static string _vocationPlayers;
         private static WebRequests _request = null;
         private static string _path
         {
@@ -52,25 +52,25 @@ namespace HighscoresTibia
         static void Main(string[] args)
         {
 
-            HtmlDocument       htmlDoc         = new HtmlDocument();
-            StringBuilder      parameters      = new StringBuilder();
+            HtmlDocument htmlDoc = new HtmlDocument();
+            StringBuilder parameters = new StringBuilder();
             HtmlNodeCollection nodes;
-            List<Player>       listPlayerFilter= new List<Player>();
+            List<Player> listPlayerFilter = new List<Player>();
 
             // Used to build the string JSON.
-            StringBuilder sbJSON          = new StringBuilder();
-            
-            string        html            = null;
-            string        mainURL         = null;
-            int           pageNumber      = 1;
-            int           retries         = 0;
-            bool          successSaved    = false;
-            bool          needsFilter     = true;
-            string[]      vocations;
-            int           count;
-            
+            StringBuilder sbJSON = new StringBuilder();
+
+            string html = null;
+            string mainURL = null;
+            int pageNumber = 1;
+            int retries = 0;
+            bool successSaved = false;
+            bool needsFilter = true;
+            string[] vocations;
+            int count;
+
             // Create new stopwatch.
-            Stopwatch     watch = new Stopwatch();
+            Stopwatch watch = new Stopwatch();
 
             List<String> worlds = new List<string>();
 
@@ -84,7 +84,7 @@ namespace HighscoresTibia
             Console.WriteLine("\nIf you need to choose more than one, use \",\" to separate the fields. Example: Knight,Sorcerer,Paladin.");
             Console.WriteLine("You can use the word \"ALL\" to generate information independent of vocation, but should'nt be accompanied by other vocations.\n");
             Console.Write("\nEnter here vocations to be Exported: ");
-            _vocationPlayers           = Console.ReadLine();
+            _vocationPlayers = Console.ReadLine();
 
             _vocationPlayers = _vocationPlayers.Replace(" ", "");
             #endregion
@@ -152,13 +152,13 @@ namespace HighscoresTibia
 #endif
             foreach (string world in worlds)
             {
-                count   = 1;
+                count = 1;
                 retries = 0;
                 Console.WriteLine("World > " + world + " < Processing...");
 
                 mainURL = "https://secure.tibia.com/community/?subtopic=highscores&world=" + world + "&list=experience&profession=0&currentpage=" + count;
 
-                html    = String.Empty;
+                html = String.Empty;
                 retries = 0;
 
                 while (String.IsNullOrEmpty(html))
@@ -172,9 +172,9 @@ namespace HighscoresTibia
                         Console.ReadKey();
                         return;
                     }
-                } 
+                }
                 htmlDoc.LoadHtml(html);
-                
+
                 // Extract the number of pages
                 nodes = htmlDoc.DocumentNode.SelectNodes("//small/div//a");
 
@@ -191,7 +191,7 @@ namespace HighscoresTibia
                 {
                     mainURL = "https://secure.tibia.com/community/?subtopic=highscores&world=" + world + "&list=experience&profession=0&currentpage=" + count;
 
-                    html    = String.Empty;
+                    html = String.Empty;
                     retries = 0;
 
                     while (String.IsNullOrEmpty(html))
@@ -206,7 +206,7 @@ namespace HighscoresTibia
                             return;
                         }
                     }
-                    
+
 
                     htmlDoc.LoadHtml(html);
 
@@ -251,61 +251,47 @@ namespace HighscoresTibia
             sbJSON.Append("]}");
 
             Console.WriteLine(">> Capture processing time: " + watch.Elapsed.ToString(@"m\:ss"));
-           
+
             AllPlayers listPlayers = JsonConvert.DeserializeObject<AllPlayers>(sbJSON.ToString());
 
 
             //Extract only vocations of interest
-            if (_vocationPlayers.Split(',').Length == 1)
-            {
-                if (_vocationPlayers.IndexOf("All", StringComparison.OrdinalIgnoreCase) > -1)
-                    needsFilter = false;
-                else
-                    needsFilter = true;
+            if (_vocationPlayers.IndexOf("All", StringComparison.OrdinalIgnoreCase) > -1)
+                needsFilter = false;
 
-                foreach (Player p in listPlayers.Players)
+            foreach (Player p in listPlayers.Players)
+            {
+                vocations = _vocationPlayers.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+
+                if (vocations.Length < 1)
+                {
+                    ConsoleError("ERROR TO GET VOCATIONS (APPCONFIG). REPORT TO THE ADMINISTRATOR");
+                    Console.ReadKey();
+                    return;
+                }
+
+                foreach (string v in vocations)
                 {
                     if (!needsFilter)
                         listPlayerFilter.Add(p);
                     else
-                    {
-                        if (p.vocation.IndexOf(_vocationPlayers, StringComparison.OrdinalIgnoreCase) > -1)
-                            listPlayerFilter.Add(p);
-                    }
-                }
-            }
-            else
-            {
-                foreach (Player p in listPlayers.Players)
-                {
-                    vocations = _vocationPlayers.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
-
-                    if (vocations.Length < 1)
-                    {
-                        ConsoleError("ERROR TO GET VOCATIONS (APPCONFIG). REPORT TO THE ADMINISTRATOR");
-                        Console.ReadKey();
-                        return;
-                    }
-
-                    foreach (string v in vocations)
                     {
                         if (p.vocation.IndexOf(v, StringComparison.OrdinalIgnoreCase) > -1)
                             listPlayerFilter.Add(p);
                     }
                 }
             }
- 
-            #region SAVE INFORMATION TO TEXT FILE   
+
+            #region SAVE INFORMATION TO TEXT FILE
 
             // Order by Experience
             List<Player> orderListPlayer = listPlayerFilter.OrderByDescending(o => Convert.ToInt64(o.experience)).ToList();
-
-                
-            StringBuilder sbJSONKnight   = new StringBuilder();
-            StringBuilder sbJSONDruid    = new StringBuilder();
-            StringBuilder sbJSONPaladin  = new StringBuilder();
+            
+            StringBuilder sbJSONKnight = new StringBuilder();
+            StringBuilder sbJSONDruid = new StringBuilder();
+            StringBuilder sbJSONPaladin = new StringBuilder();
             StringBuilder sbJSONSorcerer = new StringBuilder();
-            StringBuilder sbJSONALL      = new StringBuilder();
+            StringBuilder sbJSONALL = new StringBuilder();
 
             if (_numberPlayersTopExpExport > orderListPlayer.Count)
             {
@@ -314,24 +300,17 @@ namespace HighscoresTibia
                 return;
             }
 
-            int indexKnight   = 0;
-            int indexDruid    = 0;
-            int indexPaladin  = 0;
+            int indexKnight = 0;
+            int indexDruid = 0;
+            int indexPaladin = 0;
             int indexSorcerer = 0;
+            int indexAll = 0;
+            int limit = orderListPlayer.Count;
 
-            for (int i = 0; i < _numberPlayersTopExpExport; i++)
+            for (int i = 0; i < limit; i++)
             {
                 sbJSON.Clear();
-                //sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}",
-                //                    i+1,
-                //                    orderListPlayer[i].name, 
-                //                    orderListPlayer[i].world, 
-                //                    orderListPlayer[i].vocation,
-                //                    orderListPlayer[i].level,
-                //                    orderListPlayer[i].experience);
-                //sbJSON.AppendLine();
-
-                if (orderListPlayer[i].vocation.IndexOf("Knight", StringComparison.OrdinalIgnoreCase) > -1)
+                if (orderListPlayer[i].vocation.IndexOf("Knight", StringComparison.OrdinalIgnoreCase) > -1 && indexKnight<_numberPlayersTopExpExport)
                 {
                     sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}",
                                     indexKnight + 1,
@@ -344,7 +323,7 @@ namespace HighscoresTibia
                     sbJSONKnight.Append(sbJSON.ToString());
                     indexKnight++;
                 }
-                else if (orderListPlayer[i].vocation.IndexOf("Druid", StringComparison.OrdinalIgnoreCase) > -1)
+                else if (orderListPlayer[i].vocation.IndexOf("Druid", StringComparison.OrdinalIgnoreCase) > -1 && indexDruid < _numberPlayersTopExpExport)
                 {
                     sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}",
                                     indexDruid + 1,
@@ -357,7 +336,7 @@ namespace HighscoresTibia
                     sbJSONDruid.Append(sbJSON.ToString());
                     indexDruid++;
                 }
-                else if (orderListPlayer[i].vocation.IndexOf("Paladin", StringComparison.OrdinalIgnoreCase) > -1)
+                else if (orderListPlayer[i].vocation.IndexOf("Paladin", StringComparison.OrdinalIgnoreCase) > -1 && indexPaladin < _numberPlayersTopExpExport)
                 {
                     sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}",
                                     indexPaladin + 1,
@@ -370,7 +349,7 @@ namespace HighscoresTibia
                     sbJSONPaladin.Append(sbJSON.ToString());
                     indexPaladin++;
                 }
-                else if (orderListPlayer[i].vocation.IndexOf("Sorcerer", StringComparison.OrdinalIgnoreCase) > -1)
+                else if (orderListPlayer[i].vocation.IndexOf("Sorcerer", StringComparison.OrdinalIgnoreCase) > -1 && indexSorcerer < _numberPlayersTopExpExport)
                 {
                     sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}",
                                     indexSorcerer + 1,
@@ -383,19 +362,30 @@ namespace HighscoresTibia
                     sbJSONSorcerer.Append(sbJSON.ToString());
                     indexSorcerer++;
                 }
-                if (!needsFilter)
+                sbJSON.Clear();
+                if (!needsFilter && i < _numberPlayersTopExpExport) 
+                {
+                    sbJSON.AppendFormat("{0}\t{1}\t{2}\t{3}\t{4}\t{5}",
+                                    indexAll + 1,
+                                    orderListPlayer[i].name,
+                                    orderListPlayer[i].world,
+                                    orderListPlayer[i].vocation,
+                                    orderListPlayer[i].level,
+                                    orderListPlayer[i].experience);
+                    sbJSON.AppendLine();
                     sbJSONALL.Append(sbJSON.ToString());
-
+                    indexAll++;
+                }
             }
 
 
             Console.WriteLine("\nSaving results ....");
 
-            successSaved = SaveResultToTXT(sbJSONKnight.ToString(),   _outputfile,  "KNIGHT");
-            successSaved = SaveResultToTXT(sbJSONDruid.ToString(),    _outputfile,  "DRUID");
-            successSaved = SaveResultToTXT(sbJSONPaladin.ToString(),  _outputfile,  "PALADIN");
-            successSaved = SaveResultToTXT(sbJSONSorcerer.ToString(), _outputfile,  "SORCERER");
-            successSaved = SaveResultToTXT(sbJSONALL.ToString(),      _outputfile,  "ALL");
+            successSaved = SaveResultToTXT(sbJSONKnight.ToString(), _outputfile, "KNIGHT");
+            successSaved = SaveResultToTXT(sbJSONDruid.ToString(), _outputfile, "DRUID");
+            successSaved = SaveResultToTXT(sbJSONPaladin.ToString(), _outputfile, "PALADIN");
+            successSaved = SaveResultToTXT(sbJSONSorcerer.ToString(), _outputfile, "SORCERER");
+            successSaved = SaveResultToTXT(sbJSONALL.ToString(), _outputfile, "ALL");
 
             if (successSaved)
                 Console.WriteLine("Results saved!");
@@ -405,7 +395,7 @@ namespace HighscoresTibia
                 Console.ReadKey();
                 return;
             }
-            
+
             #endregion
 
             Console.ReadKey();
@@ -437,7 +427,7 @@ namespace HighscoresTibia
             {
                 dic[dic.ElementAt(0).Key] = world;
 
-                for (int i = 0; i < nodes.Count;)
+                for (int i = 0; i < nodes.Count; )
                 {
                     aux = nodes[i].InnerText.Trim().Replace(",", "");
 
@@ -451,14 +441,14 @@ namespace HighscoresTibia
             return null;
         }
 
-        private static bool SaveResultToTXT(string text, string path,string vocation = "")
+        private static bool SaveResultToTXT(string text, string path, string vocation = "")
         {
             try
             {
                 if (!String.IsNullOrEmpty(vocation))
                 {
                     if (!String.IsNullOrEmpty(text))
-                    System.IO.File.WriteAllText(path + "_" + DateTime.Now.ToString("dd/MM/yyyy").Replace("/", "-") + "_" + vocation + ".txt", text);
+                        System.IO.File.WriteAllText(path + "_" + DateTime.Now.ToString("dd/MM/yyyy").Replace("/", "-") + "_" + vocation + ".txt", text);
                 }
                 else
                     System.IO.File.WriteAllText(path + "_" + DateTime.Now.ToString("dd/MM/yyyy").Replace("/", "-") + ".txt", text);
@@ -470,7 +460,7 @@ namespace HighscoresTibia
             {
                 Console.WriteLine(">>>>>> ERROR : " + ex.Message);
                 return false;
-            }         
+            }
         }
 
         private static void ConsoleError(string text)

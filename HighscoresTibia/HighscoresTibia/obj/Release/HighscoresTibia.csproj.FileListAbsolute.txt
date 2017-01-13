@@ -7,3 +7,4 @@ D:\GITHUB PROJECTS\HighscoresTibiaCrawler\HighscoresTibia\HighscoresTibia\bin\Re
 D:\GITHUB PROJECTS\HighscoresTibiaCrawler\HighscoresTibia\HighscoresTibia\bin\Release\WebUtilsLib.dll
 D:\GITHUB PROJECTS\HighscoresTibiaCrawler\HighscoresTibia\HighscoresTibia\obj\Release\HighscoresTibia.exe
 D:\GITHUB PROJECTS\HighscoresTibiaCrawler\HighscoresTibia\HighscoresTibia\obj\Release\HighscoresTibia.pdb
+D:\GITHUB PROJECTS\HighscoresTibiaCrawler\HighscoresTibia\HighscoresTibia\obj\Release\HighscoresTibia.csprojResolveAssemblyReference.cache

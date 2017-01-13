@@ -38,6 +38,7 @@ namespace HighscoresTibiaForm
             this.numberPlayerExport = new System.Windows.Forms.NumericUpDown();
             this.consoleView = new System.Windows.Forms.ListView();
             this.firstColumnConsole = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.progressbar = new System.Windows.Forms.ProgressBar();
             this.MainToolStrip.SuspendLayout();
             this.MainGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numberPlayerExport)).BeginInit();
@@ -136,8 +137,6 @@ namespace HighscoresTibiaForm
             // 
             this.consoleView.BackColor = System.Drawing.SystemColors.MenuText;
             this.consoleView.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.consoleView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.firstColumnConsole});
             this.consoleView.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.consoleView.ForeColor = System.Drawing.Color.Lime;
             this.consoleView.Location = new System.Drawing.Point(13, 141);
@@ -146,11 +145,19 @@ namespace HighscoresTibiaForm
             this.consoleView.Size = new System.Drawing.Size(498, 146);
             this.consoleView.TabIndex = 4;
             this.consoleView.UseCompatibleStateImageBehavior = false;
+            this.consoleView.View = View.Details;
+            this.consoleView.Columns.Add ("Name");
+
+
             // 
-            // firstColumnConsole
+            // progressbar
             // 
-            this.firstColumnConsole.Text = "";
-            this.firstColumnConsole.Width = 140;
+            this.progressbar.ForeColor = System.Drawing.Color.Lime;
+            this.progressbar.Location = new System.Drawing.Point(12, 113);
+            this.progressbar.Name = "progressbar";
+            this.progressbar.Size = new System.Drawing.Size(314, 22);
+            this.progressbar.TabIndex = 5;
+            this.progressbar.Value = 30;
             // 
             // MainForm
             // 
@@ -158,6 +165,7 @@ namespace HighscoresTibiaForm
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.MenuHighlight;
             this.ClientSize = new System.Drawing.Size(523, 299);
+            this.Controls.Add(this.progressbar);
             this.Controls.Add(this.consoleView);
             this.Controls.Add(this.numberPlayerExport);
             this.Controls.Add(this.label1);
@@ -187,6 +195,7 @@ namespace HighscoresTibiaForm
         public System.Windows.Forms.NumericUpDown numberPlayerExport;
         public System.Windows.Forms.ListView consoleView;
         public ColumnHeader firstColumnConsole;
+        public ProgressBar progressbar;
     }
 }
 

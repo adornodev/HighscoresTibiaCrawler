@@ -30,6 +30,7 @@ namespace HighscoresTibiaForm
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.MainToolStrip = new System.Windows.Forms.ToolStrip();
             this.SendDataToolStrip = new System.Windows.Forms.ToolStripButton();
             this.MainGroupBox = new System.Windows.Forms.GroupBox();
@@ -39,6 +40,8 @@ namespace HighscoresTibiaForm
             this.consoleView = new System.Windows.Forms.ListView();
             this.firstColumnConsole = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.progressbar = new System.Windows.Forms.ProgressBar();
+            this.crawlerTimer = new System.Windows.Forms.Timer(this.components);
+            this.processTimer = new System.Windows.Forms.Label();
             this.MainToolStrip.SuspendLayout();
             this.MainGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numberPlayerExport)).BeginInit();
@@ -145,10 +148,7 @@ namespace HighscoresTibiaForm
             this.consoleView.Size = new System.Drawing.Size(498, 146);
             this.consoleView.TabIndex = 4;
             this.consoleView.UseCompatibleStateImageBehavior = false;
-            this.consoleView.View = View.Details;
-            this.consoleView.Columns.Add ("Name");
-
-
+            this.consoleView.View = System.Windows.Forms.View.Details;
             // 
             // progressbar
             // 
@@ -159,12 +159,29 @@ namespace HighscoresTibiaForm
             this.progressbar.TabIndex = 5;
             this.progressbar.Value = 30;
             // 
+            // crawlerTimer
+            // 
+            this.crawlerTimer.Interval = 1000;
+            this.crawlerTimer.Tick += new System.EventHandler(this.crawlerTimer_Tick);
+            // 
+            // processTimer
+            // 
+            this.processTimer.AutoSize = true;
+            this.processTimer.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.processTimer.ForeColor = System.Drawing.SystemColors.ControlLightLight;
+            this.processTimer.Location = new System.Drawing.Point(336, 113);
+            this.processTimer.Name = "processTimer";
+            this.processTimer.Size = new System.Drawing.Size(141, 16);
+            this.processTimer.TabIndex = 6;
+            this.processTimer.Text = "Processing Time: 0";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.MenuHighlight;
             this.ClientSize = new System.Drawing.Size(523, 299);
+            this.Controls.Add(this.processTimer);
             this.Controls.Add(this.progressbar);
             this.Controls.Add(this.consoleView);
             this.Controls.Add(this.numberPlayerExport);
@@ -196,6 +213,8 @@ namespace HighscoresTibiaForm
         public System.Windows.Forms.ListView consoleView;
         public ColumnHeader firstColumnConsole;
         public ProgressBar progressbar;
+        private Timer crawlerTimer;
+        public Label processTimer;
     }
 }
 
